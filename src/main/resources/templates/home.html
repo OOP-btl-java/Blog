@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Blog</title>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" th:href="@{/fonts/fontawesome-free-6.1.1-web/css/all.min.css}">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <link rel="stylesheet" th:href="@{/css/base.css}">
+    <link rel="stylesheet" th:href="@{/css/home.css}">
+
+    <!-- Custom CSS for refined color theme -->
+    <style>
+        /* Nền trang và các phần tử chính */
+        body {
+            background-color:  #B0E0E6; /* Xanh da trời nhạt */
+            color: #333;
+        }
+
+        /* Tiêu đề chính của bài viết */
+        h2.blog__title, .list__title {
+            color: #006699; /* Xanh dương đậm cho tiêu đề */
+        }
+
+        /* Khung bài viết */
+        .blog__link-wrapper, .list__item {
+            background-color: #ffffff;
+            border: 1px solid #e3e9ef; /* Màu viền nhẹ */
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1); /* Đổ bóng nhẹ */
+        }
+
+        /* Thông tin bài viết */
+        .blog__info-author, .blog__info-date {
+            color: #666666;
+        }
+
+        /* Liên kết và hiệu ứng hover */
+        a.blog__link, a.list__item-link {
+            color: #005ea8; /* Xanh đậm cho liên kết */
+            text-decoration: none;
+        }
+
+        a.blog__link:hover, a.list__item-link:hover {
+            color: #004080; /* Đậm hơn khi hover */
+        }
+
+        /* Phân trang */
+        .pagination .page-link {
+            color: #005ea8;
+            background-color: #e8f1fa;
+            border: 1px solid #cfd9e6;
+        }
+
+        .pagination .page-item.active .page-link {
+            background-color: #005ea8; /* Xanh dương đậm cho trang hiện tại */
+            color: #ffffff;
+            border-color: #005ea8;
+        }
+
+        /* Thanh "Truyện mới nhất" */
+        .list__title {
+            font-weight: bold;
+            color: #005ea8;
+        }
+
+        /* Ảnh bài viết */
+        .blog__img-wrapper img {
+            max-width: 100%;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+
+<div th:replace="fragments/userHeader::header"></div>
+<div th:replace="fragments/userNav::nav"></div>
+<section class="content mt-5 mb-5">
+    <div class="container">
+        <div class="row">
+            <div class="col-8">
+                <a th:href="@{'/blog/view/' + ${blog.blogId} }" class="blog__link" th:each="blog:${blogs}">
+                    <div class="blog__link-wrapper">
+                        <div class="blog__intro">
+                            <h2 class="blog__title" th:text="${blog.title}">
+                            </h2>
+                            <div class="blog__info">
+                                <p class="blog__info-author" th:text="${blog.userBlog.username}"></p>
+                                <span class="blog__info-date" th:text="${blog.timeConvert()}"></span>
+                            </div>
+                        </div>
+                        <div class="blog__img-wrapper" th:if="${blog.imageTitle!=null}">
+                            <img th:src="@{'/uploads/images/' + ${blog.imageTitle}}" alt="" class="blog__img">
+                        </div>
+                    </div>
+                </a>
+
+                <div class="row mt-4 float-right mr-1">
+                    <nav aria-label="Page navigation"
+                         th:if="${blogs.totalPages>0}">
+                        <ul class="pagination justify-content-center">
+                            <li th:class="${1==blogs.number+1} ? 'page-item active' : 'page-item'">
+                                <a class="page-link" th:href="@{/(size=${blogs.size},page=${1})}">First</a>
+                            </li>
+                            <li class="page-item active"
+                                th:each="pageNumber:${pageNumbers}"
+                                th:if="${blogs.totalPages > 1}"
+                                th:class="${pageNumber==blogs.number+1} ? 'page-item active' : 'page-item'">
+                                <a class="page-link" th:href="@{/(size=${blogs.size},page=${pageNumber})}" th:text="${pageNumber}"></a>
+                            </li>
+                            <li th:class="${blogs.totalPages==blogs.number+1} ? 'page-item active' : 'page-item'">
+                                <a class="page-link" th:href="@{/(size=${blogs.size},page=${blogs.totalPages})}">Last</a>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+            <div class="col-4">
+                <div class="list__heading">
+                    <h2 class="list__title">Truyện mới nhất</h2>
+                </div>
+                <ul class="list__container">
+                    <li class="list__item" th:each="blog:${top6Blog}">
+                        <a th:href="@{'/blog/view/' + ${blog.blogId}}" class="list__item-link">
+                            <p class="list__item-title" th:text="${blog.title}"></p>
+                            <i class="fa-solid fa-angle-right list__item-icon"></i>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>
+<!-- Optional JavaScript -->
+<!-- jQuery first, then Popper.js, then Bootstrap JS -->
+<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+</body>
+</html>
