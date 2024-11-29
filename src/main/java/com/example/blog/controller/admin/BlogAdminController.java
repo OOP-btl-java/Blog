@@ -43,112 +43,89 @@ public class BlogAdminController {
         this.storageService = storageService;
     }
 
-    // Hiển thị chi tiết một bài blog
     @GetMapping("view/{blogId}")
     public String view(@PathVariable("blogId") Long blogId, Model model) {
-        // Tìm blog dựa trên blogId
         Optional<Blog> existed = blogService.findById(blogId);
         Blog entity = existed.get();
 
-        // Thêm blog vào model để truyền dữ liệu sang giao diện
         model.addAttribute("blog", entity);
-        return "userContent"; // Trả về giao diện hiển thị nội dung blog
+        return "userContent";
     }
 
-    // Xóa một bài blog
     @GetMapping("delete/{blogId}")
     public String delete(@PathVariable("blogId") Long blogId, Model model) throws IOException {
-        // Tìm blog dựa trên blogId
         Optional<Blog> blogOptional = blogService.findById(blogId);
         Blog entity = blogOptional.get();
 
-        // Lấy danh sách người dùng đã thích bài blog
         List<User> userList = new ArrayList<>(entity.getLikedUser());
         String title = entity.getTitle();
 
-        // Xóa liên kết giữa người dùng và bài blog
         for (User user : userList) {
             user.removeLikedBlog(entity);
-            userService.save(user); // Lưu người dùng sau khi cập nhật
+            userService.save(user);
         }
-        // Nếu blog có hình ảnh, xóa hình ảnh khỏi bộ lưu trữ
         if (entity.getImageTitle() != null) {
             storageService.delete(entity.getImageTitle());
         }
-        // Xóa bài blog khỏi cơ sở dữ liệu
         blogService.delete(entity);
-        // Thêm thông báo xóa blog vào model
         model.addAttribute("deleteMess", "Truyện " + title + " đã bị xóa");
-        return "forward:/admin/blogs"; // Chuyển tiếp đến danh sách blog
+        return "forward:/admin/blogs";
     }
 
-    // Xóa một bình luận trong blog
     @GetMapping("deleteComment/{commentId}")
     public String deleteComment(@PathVariable("commentId") Long commentId) {
-        // Tìm bình luận dựa trên commentId
         Optional<Comment> existed = commentService.findById(commentId);
         Comment entity = existed.get();
 
-        // Lấy blogId liên quan đến bình luận
         Long blogId = entity.getBlogComment().getBlogId();
-        // Xóa bình luận khỏi cơ sở dữ liệu
         commentService.delete(entity);
-        // Chuyển hướng về trang chi tiết blog
         return "redirect:/admin/blogs/view/" + blogId;
     }
 
-    // Danh sách blog với phân trang
     @GetMapping("")
     public String list(@RequestParam("page") Optional<Integer> page,
                        @RequestParam("size") Optional<Integer> size,
                        Model model) {
-        int currentPage = page.orElse(1); // Trang hiện tại, mặc định là 1
-        int pageSize = size.orElse(5); // Số bài blog trên mỗi trang, mặc định là 5
+        int currentPage = page.orElse(1);
+        int pageSize = size.orElse(5);
         Pageable pageable = PageRequest.of(currentPage - 1, pageSize);
-        // Lấy danh sách blog với phân trang
         Page<Blog> resultPage = blogService.findAll(pageable);
-        // Thêm thông tin phân trang vào model
         paginateBlog(model, currentPage, resultPage);
-        return "adminBlogList"; // Trả về giao diện danh sách blog
+        return "adminBlogList";
     }
 
-    // Tìm kiếm blog theo từ khóa với phân trang
     @GetMapping("search")
     public String search(@RequestParam(value = "searchWord", required = false) String name,
                          @RequestParam("page") Optional<Integer> page,
                          @RequestParam("size") Optional<Integer> size,
                          Model model) {
-        int currentPage = page.orElse(1); // Trang hiện tại, mặc định là 1
-        int pageSize = size.orElse(5); // Số bài blog trên mỗi trang, mặc định là 5
+        int currentPage = page.orElse(1);
+        int pageSize = size.orElse(5);
         Pageable pageable = PageRequest.of(currentPage - 1, pageSize);
-        if (StringUtils.hasText(name)) { // Kiểm tra từ khóa tìm kiếm
-            // Tìm kiếm blog theo từ khóa
+        if (StringUtils.hasText(name)) {
             Page<Blog> resultPage = blogService.findByNameContaining(name.trim(), pageable);
             paginateBlog(model, currentPage, resultPage);
         } else {
-            // Nếu không có từ khóa, lấy tất cả blog
             Page<Blog> resultPage = blogService.findAll(pageable);
             paginateBlog(model, currentPage, resultPage);
         }
-        model.addAttribute("keyword", name); // Thêm từ khóa tìm kiếm vào model
-        return "adminBlogSearch"; // Trả về giao diện kết quả tìm kiếm
+        model.addAttribute("keyword", name);
+        return "adminBlogSearch";
     }
 
-    // Hàm hỗ trợ phân trang cho danh sách blog
     private void paginateBlog(Model model, int currentPage, Page<Blog> resultPage) {
-        int totalPages = resultPage.getTotalPages(); // Tổng số trang
+        int totalPages = resultPage.getTotalPages();
         if (totalPages > 0) {
-            int start = Math.max(1, currentPage - 2); // Trang bắt đầu
-            int end = Math.min(currentPage + 2, totalPages); // Trang kết thúc
+            int start = Math.max(1, currentPage - 2);
+            int end = Math.min(currentPage + 2, totalPages);
             if (totalPages >= 5) {
-                if (end == totalPages) start = end - 4; // Điều chỉnh nếu ở cuối danh sách
-                else if (start == 1) end = start + 4; // Điều chỉnh nếu ở đầu danh sách
+                if (end == totalPages) start = end - 4;
+                else if (start == 1) end = start + 4;
             }
-            // Tạo danh sách số trang
             List<Integer> pageNumbers = IntStream.rangeClosed(start, end)
                     .boxed().collect(Collectors.toList());
-            model.addAttribute("pageNumbers", pageNumbers); // Thêm danh sách số trang vào model
+            model.addAttribute("pageNumbers", pageNumbers);
         }
-        model.addAttribute("blogs", resultPage); // Thêm danh sách blog vào model
+        model.addAttribute("blogs", resultPage);
     }
 }
